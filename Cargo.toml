@@ -1,0 +1,6 @@
+[package]
+name = "blast"
+version = "0.1.0"
+authors = ["pheneg1 <paul-andre.henegar@mail.mcgill.ca>"]
+
+[dependencies]
