@@ -151,7 +151,7 @@ fn make_bullet(ang: f64, g: &GameObject)  -> GameObject {
         },
         spec: Special::Bullet( Bullet {
             damage: 23,
-            time_remaining: 1000.,
+            time_remaining: 1500.,
         }),
         radius: 2.,
     }
