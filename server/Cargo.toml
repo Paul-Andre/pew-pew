@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["pheneg1 <paul-andre.henegar@mail.mcgill.ca>"]
 
 [dependencies]
+websocket = "0.20.2"
+rand = "0.4"
+byteorder = "1"
+chan = "0.1.21"

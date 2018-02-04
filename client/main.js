@@ -182,15 +182,22 @@ function drawStep(timestamp) {
 var attackCooldown = 100;
 
 var canAttack = true;
+
+function shootBullet() {
+    var bullet = generateNewObject(Math.random()*1000, newBullet);
+    bullet.x = playerShip.x;
+    bullet.y = playerShip.y;
+    bullet.dx = Math.cos(playerShip.angle)*200;
+    bullet.dy = Math.sin(playerShip.angle)*200;
+    bullet.x += Math.cos(playerShip.angle)*10;
+    bullet.y += Math.sin(playerShip.angle)*10;
+}
+
+
 function attackNormal() {
     if (canAttack == true) {
-        var bullet = generateNewObject(Math.random()*1000, newBullet);
-        bullet.x = playerShip.x;
-        bullet.y = playerShip.y;
-        bullet.dx = Math.cos(playerShip.angle)*200;
-        bullet.dy = Math.sin(playerShip.angle)*200;
-        bullet.x += Math.cos(playerShip.angle)*10;
-        bullet.y += Math.sin(playerShip.angle)*10;
+        shootBullet();
+
         canAttack = false;
         setTimeout(function() {
             canAttack = true;
@@ -200,14 +207,15 @@ function attackNormal() {
 
 function attackSpecial() {
     if (canAttack == true) {
+        shootBullet();
+        playerShip.angle+=0.1;
+        shootBullet();
+        playerShip.angle-=0.1;
+        playerShip.angle-=0.1;
+        shootBullet();
+        playerShip.angle+=0.1;
+
         canAttack = false;
-        attackNormal();
-        playerShip.angle+=0.1;
-        attackNormal();
-        playerShip.angle-=0.1;
-        playerShip.angle-=0.1;
-        attackNormal();
-        playerShip.angle+=0.1;
         setTimeout(function() {
             canAttack = true;
         }, attackCooldown*3);
@@ -219,10 +227,6 @@ var attackSpecialButton = document.getElementById("attackSpecialButton");
 
 attackNormalButton.onmousedown = attackNormalButton.ontouchstart = attackNormal;
 attackSpecialButton.onmousedown = attackSpecialButton.ontouchstart = attackSpecial;
-
-attackNormalButton.onmouseup = attackNormalButton.ontouchend = attackNormalEnd;
-attackSpecialButton.onmouseup = attackSpecialButton.ontouchend = attackSpecialEnd;
-
 
 //drawStep(performance.now());
 
