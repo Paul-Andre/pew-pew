@@ -5,11 +5,13 @@ var ctx = canvas.getContext("2d");
 // Assume the screen is already correctly translated to have the object be at 0
 function drawShip(ctx) {
     ctx.save();
-    this.angle = Math.atan2(this.dy, this.dx) + Math.PI*0.5;
+    if(this.dy != 0 || this.dx != 0) {
+        this.angle = Math.atan2(this.dy, this.dx)
+    }
 
     ctx.rotate(this.angle);
 
-    ctx.strokeStyle = "#000000";
+    ctx.rotate(Math.PI*0.5);
 
     
 
@@ -23,18 +25,37 @@ function drawShip(ctx) {
     ctx.restore();
 }
 
+function drawBullet(ctx) {
+    ctx.save();
+    if(this.dy != 0 || this.dx != 0) {
+        this.angle = Math.atan2(this.dy, this.dx) + Math.PI*0.5;
+    }
+
+    ctx.rotate(this.angle);
+
+    ctx.strokeStyle = "#000000";
+
+    
+
+    ctx.beginPath();
+    ctx.moveTo(1,1);
+    ctx.lineTo(0,-2);
+    ctx.lineTo(-1,1);
+    ctx.lineTo(1,1);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
 
 var idToObj = {};
 
 
-function newBullet(id,) {
-    return {};
-}
 
-
-function newShip() {
+function newShip(id) {
     return {
-        id: 12312,
+        id: id,
 
         px: 5,
         py: 5,
@@ -45,8 +66,8 @@ function newShip() {
         ndx: 0.1,
         ndy: 0.1,
 
-        x: 5,
-        y: 5,
+        x: 100,
+        y: 100,
         dx: 10,
         dy: 10 ,
 
@@ -56,9 +77,42 @@ function newShip() {
     };
 }
 
+function newBullet(id) {
+    return {
+        id: id,
+
+        px: 5,
+        py: 5,
+        pdx: 0,
+        pdy: 0,
+        nx: 5,
+        ny: 5,
+        ndx: 0.1,
+        ndy: 0.1,
+
+        x: 100,
+        y: 100,
+        dx: 70,
+        dy: 70 ,
+
+        draw: drawBullet,
+    };
+}
 
 
-var objects = [newShip()];
+var objects = [];
+
+function generateNewObject(id, constructor) {
+    var ship = constructor(id);
+    objects.push(ship);
+    idToObj[id] = objects.length-1;
+    return ship;
+}
+
+var playerId = 12312;
+
+var playerShip = generateNewObject(playerId, newShip);
+generateNewObject(234123, newBullet);
 
 
 function drawAll() {
@@ -66,6 +120,7 @@ function drawAll() {
     drawGrid(0,0,300,300);
     ctx.strokeStyle = "#000000";
     for(var i=0; i<objects.length; i++) {
+
         var obj = objects[i];
         ctx.save();
         ctx.translate(obj.x, obj.y);
@@ -79,14 +134,16 @@ function drawAll() {
 function updateSmoothing(progress) {
     progress *= 0.001;
 
+    playerShip.dx = dx*100;
+    playerShip.dy = dy*100;
+    
+
     for(var i=0; i<objects.length; i++) {
         var obj = objects[i];
         obj.x += progress*obj.dx;
         obj.y += progress*obj.dy;
     }
 
-    obj.dx += (Math.random()-0.5)*5;
-    obj.dy += (Math.random()-0.5)*5;
 }
 
 
@@ -111,7 +168,6 @@ function drawGrid(x,y,w,h){
 }
 
 
-
 var prevTimestep = performance.now();
 function drawStep(timestamp) {
     drawAll();
@@ -122,20 +178,57 @@ function drawStep(timestamp) {
     window.requestAnimationFrame(drawStep);
 }
 
-drawStep(performance.now());
+// In milliseconds
+var attackCooldown = 100;
 
-
-function initializeGui() {
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.outerHeight;
-
-    //window.scrollTo(0,1);
-
-    //canvas.width = window.innerWidth;
-    //canvas.height = window.innerHeight;
+var canAttack = true;
+function attackNormal() {
+    if (canAttack == true) {
+        var bullet = generateNewObject(Math.random()*1000, newBullet);
+        bullet.x = playerShip.x;
+        bullet.y = playerShip.y;
+        bullet.dx = Math.cos(playerShip.angle)*200;
+        bullet.dy = Math.sin(playerShip.angle)*200;
+        bullet.x += Math.cos(playerShip.angle)*10;
+        bullet.y += Math.sin(playerShip.angle)*10;
+        canAttack = false;
+        setTimeout(function() {
+            canAttack = true;
+        }, attackCooldown);
+    }
 }
+
+function attackSpecial() {
+    if (canAttack == true) {
+        canAttack = false;
+        attackNormal();
+        playerShip.angle+=0.1;
+        attackNormal();
+        playerShip.angle-=0.1;
+        playerShip.angle-=0.1;
+        attackNormal();
+        playerShip.angle+=0.1;
+        setTimeout(function() {
+            canAttack = true;
+        }, attackCooldown*3);
+    }
+}
+
+var attackNormalButton = document.getElementById("attackNormalButton");
+var attackSpecialButton = document.getElementById("attackSpecialButton");
+
+attackNormalButton.onmousedown = attackNormalButton.ontouchstart = attackNormal;
+attackSpecialButton.onmousedown = attackSpecialButton.ontouchstart = attackSpecial;
+
+attackNormalButton.onmouseup = attackNormalButton.ontouchend = attackNormalEnd;
+attackSpecialButton.onmouseup = attackSpecialButton.ontouchend = attackSpecialEnd;
+
+
+//drawStep(performance.now());
 
 window.onresize = initializeGui;
 
 initializeGui();
+resetJoystick();
+
+drawStep(performance.now());

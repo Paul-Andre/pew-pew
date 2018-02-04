@@ -1,0 +1,57 @@
+.joystickArea {
+    position: fixed;
+    height: 160px;
+    width: 160px;
+    /*background-color: blue;*/
+    left: 0px;
+    bottom: 0px;
+    margin-left: 0px;
+}
+
+.joystickAreaOverlay {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+}
+
+.joystick {
+    position: absolute;
+    border-radius : 45px;
+    border: solid 1px black;
+    : fixed;
+    height: 90px;
+    width: 90px;
+}
+
+.activeButton {
+	background-color: rgba(255,0,0,0.5);
+}
+
+.attackButtonsArea {
+    position: fixed;
+    height: 150px;
+    width: 150px;
+    right: 0px;
+    bottom: 0px;
+    margin-right: 0px;
+}
+
+.attackNormalButton {
+    position: absolute;
+    border-radius : 50px;
+    border: solid 1px black;
+    height: 100px;
+    width: 100px;
+    bottom: 10px;
+}
+
+.attackSpecialButton {
+    position: absolute;
+    border-radius : 35px;
+    border: solid 1px black;
+    height: 70px;
+    width: 70px;
+    right: 10px;
+}
