@@ -20,8 +20,6 @@ function drawShip(ctx) {
 
     ctx.rotate(Math.PI*0.5);
 
-    
-
     ctx.beginPath();
     ctx.moveTo(6,6);
     ctx.lineTo(0,-7);
@@ -352,6 +350,14 @@ ws.onmessage = function(event) {
 
     }
 }
+
+
+ws.onclose = function() {
+    setTimeout( function() {
+        location.reload();
+    }, 500);
+};
+
 
 
 
