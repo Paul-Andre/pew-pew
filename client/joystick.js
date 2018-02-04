@@ -72,3 +72,7 @@ mba.addEventListener("touchend", function(event) {
     }
 }, true);
 
+setTimeout( function() {
+    mba.onmousedown = attackNormal;
+}, 100);
+

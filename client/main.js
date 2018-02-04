@@ -5,9 +5,16 @@ var ctx = canvas.getContext("2d");
 // Assume the screen is already correctly translated to have the object be at 0
 function drawShip(ctx) {
     ctx.save();
+    /*
     if(this.dy != 0 || this.dx != 0) {
         this.angle = Math.atan2(this.dy, this.dx)
     }
+    */
+
+    ctx.fillStype = "black"
+    ctx.fillRect(-10,12, this.health/this.maxHealth * 20,2);
+    //alert(this.health,this.maxHealth);
+
 
     ctx.rotate(this.angle);
 
@@ -16,10 +23,10 @@ function drawShip(ctx) {
     
 
     ctx.beginPath();
-    ctx.moveTo(5,5);
+    ctx.moveTo(6,6);
     ctx.lineTo(0,-7);
-    ctx.lineTo(-5,5);
-    ctx.lineTo(5,5);
+    ctx.lineTo(-6,6);
+    ctx.lineTo(6,6);
     ctx.stroke();
 
     ctx.restore();
@@ -49,7 +56,6 @@ function drawBullet(ctx) {
 
 
 
-var idToObj = {};
 
 
 
@@ -57,14 +63,11 @@ function newShip(id) {
     return {
         id: id,
 
-        px: 5,
-        py: 5,
-        pdx: 0,
-        pdy: 0,
         nx: 5,
         ny: 5,
         ndx: 0.1,
         ndy: 0.1,
+        ntimestamp: 0.0,
 
         x: 100,
         y: 100,
@@ -81,14 +84,11 @@ function newBullet(id) {
     return {
         id: id,
 
-        px: 5,
-        py: 5,
-        pdx: 0,
-        pdy: 0,
         nx: 5,
         ny: 5,
         ndx: 0.1,
         ndy: 0.1,
+        ntimestamp: 0.0,
 
         x: 100,
         y: 100,
@@ -100,24 +100,19 @@ function newBullet(id) {
 }
 
 
-var objects = [];
 
 function generateNewObject(id, constructor) {
     var ship = constructor(id);
     objects.push(ship);
-    idToObj[id] = objects.length-1;
+    idToObj[id] = ship;
     return ship;
 }
 
-var playerId = 12312;
-
-var playerShip = generateNewObject(playerId, newShip);
-generateNewObject(234123, newBullet);
 
 
 function drawAll() {
     canvas.width = canvas.width;
-    drawGrid(0,0,300,300);
+    //drawGrid(0,0,300,300);
     ctx.strokeStyle = "#000000";
     for(var i=0; i<objects.length; i++) {
 
@@ -132,16 +127,40 @@ function drawAll() {
 }
 
 function updateSmoothing(progress) {
+    var now = performance.now() * 0.001;
     progress *= 0.001;
 
-    playerShip.dx = dx*100;
-    playerShip.dy = dy*100;
+    //playerShip.dx = dx*100;
+    //playerShip.dy = dy*100;
     
 
     for(var i=0; i<objects.length; i++) {
         var obj = objects[i];
-        obj.x += progress*obj.dx;
-        obj.y += progress*obj.dy;
+
+        var px = obj.x + progress*obj.dx;
+        var py = obj.y + progress*obj.dy;
+
+        var nt = now - obj.ntimestamp*0.001;
+
+        var nx = obj.nx + obj.ndx*nt;
+        var ny = obj.ny + obj.ndy*nt;
+
+        //var rate = (1/(1+Math.exp(-nt*2))-0.5)*2; // Should depend on progress
+        var rate = 0.5;
+
+        obj.x = px * (1-rate) + nx * rate;
+        obj.y = py * (1-rate) + ny * rate;
+        obj.dx = obj.dx * (1-rate) + obj.ndx * rate;
+        obj.dy = obj.dy * (1-rate) + obj.ndy * rate;
+
+        
+        /*
+        obj.x = nx
+        obj.y = ny
+        obj.dx = obj.ndx
+        obj.dy = obj.ndy
+        */
+        
     }
 
 }
@@ -195,6 +214,10 @@ function shootBullet() {
 
 
 function attackNormal() {
+    ws.send(JSON.stringify({
+        Move: "AttackNormal"
+    }));
+    /*
     if (canAttack == true) {
         shootBullet();
 
@@ -203,9 +226,14 @@ function attackNormal() {
             canAttack = true;
         }, attackCooldown);
     }
+    */
 }
 
 function attackSpecial() {
+    ws.send(JSON.stringify({
+        Move: "AttackSpecial"
+    }));
+    /*
     if (canAttack == true) {
         shootBullet();
         playerShip.angle+=0.1;
@@ -220,6 +248,7 @@ function attackSpecial() {
             canAttack = true;
         }, attackCooldown*3);
     }
+    */
 }
 
 var attackNormalButton = document.getElementById("attackNormalButton");
@@ -230,9 +259,99 @@ attackSpecialButton.onmousedown = attackSpecialButton.ontouchstart = attackSpeci
 
 //drawStep(performance.now());
 
-window.onresize = initializeGui;
 
-initializeGui();
-resetJoystick();
 
-drawStep(performance.now());
+var playerId = -2323;
+var width = 100;
+var height = 100;
+var playerShip;
+
+var idToObj = {};
+var objects = [];
+
+var ws = new WebSocket("ws://"+location.hostname + ":9000");
+var hadFirstMessage = false;
+ws.onmessage = function(event) {
+    if (!hadFirstMessage) {
+        playerId = JSON.parse(event.data);
+        ws.send(JSON.stringify({Info:
+            {
+                name: "",
+                color: "",
+            }
+        }));
+        playerShip = generateNewObject(playerId, newShip);
+        hadFirstMessage = true;
+
+        window.onresize = initializeGui;
+
+        initializeGui();
+        resetJoystick();
+
+        drawStep(performance.now());
+    }
+    else {
+        var message = JSON.parse(event.data);
+        if (message.width) width = message.width;
+        if (message.height) height = message.height;
+        if (message.asdasdf) {
+            alert("werqwe");
+        }
+        if (message.game_objects) {
+            var prevObjects = objects;
+            var prevIdToObj = idToObj;
+
+            idToObj = {};
+            objects = [];
+
+            for (var id in message.game_objects) {
+                var obj_rep = message.game_objects[id];
+                var obj;
+                if (id in prevIdToObj) {
+                    obj = prevIdToObj[id];
+                }
+                else {
+                    if (obj_rep.spec.Ship) {
+                        obj = generateNewObject(id, newShip);
+                    }
+                    else if (obj_rep.spec.Bullet) {
+                        obj = generateNewObject(id, newBullet);
+                    }
+                    obj.x = obj_rep.exis.loc.x;
+                    obj.y = obj_rep.exis.loc.y;
+                    obj.dx = obj_rep.exis.dloc.x;
+                    obj.dy = obj_rep.exis.dloc.y;
+                }
+
+                idToObj[id] = obj;
+                objects.push(obj);
+
+                obj.nx = obj_rep.exis.loc.x;
+                obj.ny = obj_rep.exis.loc.y;
+                obj.ndx = obj_rep.exis.dloc.x;
+                obj.ndy = obj_rep.exis.dloc.y;
+                obj.ntimestamp = performance.now();
+
+                obj.angle = obj_rep.exis.angle;
+
+                if (obj_rep.spec.Ship) {
+                    obj.health = obj_rep.spec.Ship.health;
+                    obj.maxHealth = obj_rep.spec.Ship.max_health;
+                }
+            }
+        }
+
+        ws.send(JSON.stringify({
+            Move: {
+                Thrust: {
+                    x: dx,
+                    y: dy,
+                }
+            }
+        }));
+
+    }
+}
+
+
+
